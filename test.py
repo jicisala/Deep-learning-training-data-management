@@ -161,11 +161,9 @@ class TrainDataHandle:
         results = self.cursor.fetchall()
 
         # 判断结果是否为空
-        if results == ():
+        if results == () or results == 0:
             print("没有查询到任何不重复数据")
             return False
-
-        self.duplicate_avoid(results=results)
 
         return results
 
@@ -201,12 +199,9 @@ class TrainDataHandle:
         results = self.cursor.fetchall()
 
         # 判断结果是否为空
-        if results == ():
+        if results == () or results == 0:
             print("没有查询到任何不重复数据")
             return False
-
-        # 去重操作
-        self.duplicate_avoid(results=results)
 
         return results
 
@@ -232,12 +227,9 @@ class TrainDataHandle:
         self.cursor.execute(sql, [key_word_1, key_word_2, nums])
         results = self.cursor.fetchall()
 
-        if results == ():
+        if results == () or results == 0:
             print("没有查询到任何不重复数据")
             return False
-
-        # 判断结果是否为空
-        self.duplicate_avoid(results=results)
 
         return results
 
@@ -246,19 +238,21 @@ class TrainDataHandle:
         if results is None:
             return False
 
+        # 通过将查询结果插入到选中表来防止选中错误
         self.input_data(table_name=conf.PICTURE_SELECT_TABLE_NAME, contents=results)
 
     # 如果dup_tag = 0，则为不重复选取
-    def out_put_pictures(self, picture_sets, if_dup=1):
+    def out_put_pictures(self, picture_sets, if_dup=0):
+        if picture_sets == False:
+            print("没有任何输出结果")
+            return False
+
         output_dir = conf.OUTPUT_PICTURE_PATH
         picture_dir = conf.PICTURE_PATH
         indexs = []
 
         if if_dup == 0:
             self.duplicate_avoid(picture_sets)
-
-        # if dup_tag == 0:
-        #     duplicate_removal(picture_sets)
 
         for picture in picture_sets:
             indexs.append(picture[1])
@@ -295,8 +289,14 @@ if __name__ == '__main__':
     # 测试区域
     f = TrainDataHandle()
 
-    result = f.get_fields(table_name=conf.PICTURE_SELECT_TABLE_NAME)
-    print(result)
+    # result = f.get_fields(table_name=conf.PICTURE_SELECT_TABLE_NAME)
+    # result = f.search_data_size(field='id', key_word='500', nums=50, com_type="<")
+    # f.out_put_pictures(picture_sets=result)
+
+    f.initialization()
+
+    # print(result)
+    
     end_time = int(time.time())
     use_time = end_time - start_time
     print("耗时" + str(use_time) + "秒")
