@@ -60,5 +60,8 @@ if __name__ == '__main__':
     string_1 = "image_index"
     string_2 = "Image Index"
     get_string_similarity(string_1, string_2)
+    result = 0
+    if not result:
+        print("yes")
 
 

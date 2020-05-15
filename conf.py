@@ -18,17 +18,17 @@ DATABASE_CONNECT_INFORMATION = {
     }
 
 # 信息表
-PICTURE_INFORMATION_TABLE_NAME = "picture_information"
+DATA_INFORMATION_TABLE_NAME = "picture_information"
 # 选取表
-PICTURE_SELECT_TABLE_NAME = 'selected_picture'
+DATA_SELECT_TABLE_NAME = 'selected_picture'
 
 
 """
 路径信息
 """
-# 图片路径
-PICTURE_PATH = "F:\project_sources\Deep-learning-train-data-manage\训练数据\data_sets"
-# 图片输出路径
-OUTPUT_PICTURE_PATH = "E:\Projects\Python-projects\Deep-learning-training-data-management.git\outputs"
+# 数据路径
+DATA_PATH = "F:\project_sources\Deep-learning-train-data-manage\训练数据\data_sets"
+# 数据输出路径
+OUTPUT_DATA_PATH = "F:\project_sources\Deep-learning-train-data-manage\Outputs"
 # 数据信息表路径
 DATA_INFORMATION_PATH = 'F:\project_sources\Deep-learning-train-data-manage\训练数据\Data_Entry_2017_v2020.csv'
