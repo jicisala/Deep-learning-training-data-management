@@ -43,14 +43,14 @@ class TrainDataHandle:
 
     # 构造sql语句
     # 1为插入语句
-    # 2为链表查询语句
+    # 2为联表查询语句
     # 3为删除语句
-    def construct_sql(self, table_name, type):
+    def construct_sql(self, table_name, sql_type):
         sql = ''
         # 用于构造查询语句中的选中表部分
-        select_fields = self.get_fields(table_name=conf.DATA_SELECT_TABLE_NAME)
+        select_fields = self.get_fields(table_name=conf.TABLE['DATA_SELECT'])
 
-        if type == 1:
+        if sql_type == 1:
             all_fields = self.get_fields(table_name)
 
             # 构造属性部分
@@ -64,21 +64,22 @@ class TrainDataHandle:
             sql = "INSERT INTO " + '`' + conf.DATABASE_CONNECT_INFORMATION[
                 'db'] + '`' + "." + '`' + table_name + '` ' + '(' + inserted_field + ')' + ' VALUES '
 
-        elif type == 2:
+        elif sql_type == 2:
             # 构造查询函数的通用部分
-            sql = "SELECT " + table_name + ".* FROM " + table_name + " LEFT JOIN " + conf.DATA_SELECT_TABLE_NAME +\
-                  " ON " + table_name + ".id = " + conf.DATA_SELECT_TABLE_NAME + "." + select_fields[0] + " WHERE " +\
-                  conf.DATA_SELECT_TABLE_NAME + "." + select_fields[0] + " IS NULL AND "
+            sql = "SELECT " + table_name + ".* FROM " + table_name + " LEFT JOIN " + conf.TABLE['DATA_SELECT'] +\
+                  " ON " + table_name + ".id = " + conf.TABLE['DATA_SELECT'] + "." + select_fields[0] + " WHERE " +\
+                  conf.TABLE['DATA_SELECT'] + "." + select_fields[0] + " IS NULL AND "
 
-        elif type == 3:
+        elif sql_type == 3:
             # 主要用于初始化选中表
-            sql = 'delete from ' + conf.DATA_SELECT_TABLE_NAME
+            sql = 'delete from ' + conf.TABLE['DATA_SELECT']
 
         return sql
 
-    # 获得信息表中信息
+    # 获得信息表中信息（scv，excel等）
     # 如果type为1，则获得的是信息，type为0，则获得的是头部
-    def open_data_information_file(self, file=conf.DATA_INFORMATION_PATH, type=1):
+    @staticmethod
+    def open_data_information_file(file=conf.PATH['DATA_INFORMATION'], sql_type=1):
         if file is None:
             print("文件路径为空")
 
@@ -89,10 +90,10 @@ class TrainDataHandle:
             import csv
             with open(file, 'r') as contents:
                 reader = csv.reader(contents)
-                if type == 1:
+                if sql_type == 1:
                     # 去掉第一行属性名行
                     reader = list(reader)[1:]
-                elif type == 0:
+                elif sql_type == 0:
                     reader = list(reader)[0]
         if suffix == "excel":
             print("开发中")
@@ -102,7 +103,7 @@ class TrainDataHandle:
 
     # 输入需要解析的记录文件，如excel，csv等格式
     # file为记录文件的绝对路径加文件名
-    def input_data(self, table_name=conf.DATA_INFORMATION_TABLE_NAME, contents=''):
+    def input_data(self, table_name=conf.TABLE['DATA_INFORMATION'], contents=''):
         # 若没内容，则传入训练数据
         if contents == '':
             contents = self.open_data_information_file()
@@ -110,8 +111,9 @@ class TrainDataHandle:
         fields = self.get_fields(table_name)
 
         # 构造sql语句
-        sql = self.construct_sql(table_name=table_name, type=1)
+        sql = self.construct_sql(table_name=table_name, sql_type=1)
 
+        print('开始构造sql语句')
         for row in contents:
             # 构造数据，一次构造出需要插入的所有数据
             inserted_value = '('
@@ -131,8 +133,11 @@ class TrainDataHandle:
         sql = sql[:-2] + ';'  # 加上[:-2]是为了去除尾部多余的逗号
 
         print("开始插入")
-        self.cursor.execute(sql)
-        self.conn.commit()
+        try:
+            self.cursor.execute(sql)
+            self.conn.commit()
+        except:
+            print("插入失败")
 
     # 按关键字查询
     # if_like为1是模糊查询，0是非模糊查询
@@ -150,16 +155,16 @@ class TrainDataHandle:
             print("搜索关键字不能为空")
             return False
 
-        sql = self.construct_sql(table_name=conf.DATA_INFORMATION_TABLE_NAME, type=2)
+        sql = self.construct_sql(table_name=conf.TABLE['DATA_INFORMATION'], sql_type=2)
 
         # 判断是否需要进行模糊查询
         if if_like == 0:
-            sql += conf.DATA_INFORMATION_TABLE_NAME + "." + field + " = %s LIMIT %s;"
+            sql += conf.TABLE['DATA_INFORMATION'] + "." + field + " = %s LIMIT %s;"
             self.cursor.execute(sql, [str(key_word), nums])
         elif if_like == 1:
             key_word_1 = '%|' + str(key_word) + '%'
             key_word_2 = '%' + str(key_word) + '|%'
-            sql += conf.DATA_INFORMATION_TABLE_NAME + "." + field + " LIKE %s or " + field + " LIKE %s " + "LIMIT %s"
+            sql += conf.TABLE['DATA_INFORMATION'] + "." + field + " LIKE %s or " + field + " LIKE %s " + "LIMIT %s"
 
             self.cursor.execute(sql, [key_word_1, key_word_2, nums])
         else:
@@ -194,14 +199,14 @@ class TrainDataHandle:
             print("搜索关键字不能为空")
             return False
 
-        sql = self.construct_sql(table_name=conf.DATA_INFORMATION_TABLE_NAME, type=2)
+        sql = self.construct_sql(table_name=conf.TABLE['DATA_INFORMATION'], sql_type=2)
 
         # 判断比较类型是否合法
         if com_type not in ['>', '>=', '<', '<=']:
             print("这里没有你想要的东西")
             return False
 
-        sql += conf.DATA_INFORMATION_TABLE_NAME + "." + field + " " + com_type + " %s LIMIT %s"
+        sql += conf.TABLE['DATA_INFORMATION'] + "." + field + " " + com_type + " %s LIMIT %s"
 
         self.cursor.execute(sql, [key_word, nums])
         results = self.cursor.fetchall()
@@ -229,8 +234,8 @@ class TrainDataHandle:
             return False
 
         # 构造
-        sql = self.construct_sql(table_name=conf.DATA_INFORMATION_TABLE_NAME, type=2)
-        sql += conf.DATA_INFORMATION_TABLE_NAME + "." + field + " BETWEEN %s and %s LIMIT %s"
+        sql = self.construct_sql(table_name=conf.TABLE['DATA_INFORMATION'], sql_type=2)
+        sql += conf.TABLE['DATA_INFORMATION'] + "." + field + " BETWEEN %s and %s LIMIT %s"
 
         # 查询
         self.cursor.execute(sql, [key_word_1, key_word_2, nums])
@@ -248,16 +253,16 @@ class TrainDataHandle:
             return False
 
         # 通过将查询结果插入到选中表来防止选中错误
-        self.input_data(table_name=conf.DATA_SELECT_TABLE_NAME, contents=results)
+        self.input_data(table_name=conf.TABLE['DATA_SELECT'], contents=results)
 
     # 如果dup_tag = 0，则为不重复选取
-    def out_put_data(self, data_sets, if_dup=0):
+    def output_data(self, data_sets, if_dup=0):
         if not data_sets:
             print("没有任何输出结果")
             return False
 
-        output_dir = conf.OUTPUT_DATA_PATH
-        data_dir = conf.DATA_PATH
+        output_dir = conf.PATH['DATA_OUTPUT']
+        data_dir = conf.PATH['DATA']
         indexs = []
 
         if if_dup == 0:
@@ -276,14 +281,14 @@ class TrainDataHandle:
     # 初始化选取，从零开始
     def initialization(self):
         # 清空选中表
-        sql = self.construct_sql(table_name=conf.DATA_SELECT_TABLE_NAME, type=3)
+        sql = self.construct_sql(table_name=conf.TABLE['DATA_SELECT'], sql_type=3)
 
         self.cursor.execute(sql)
         self.conn.commit()
 
         # 清空输出文件夹
-        for i in os.listdir(conf.OUTPUT_DATA_PATH):
-            file = conf.OUTPUT_DATA_PATH + '\\' + i
+        for i in os.listdir(conf.PATH['DATA_OUTPUT']):
+            file = conf.PATH['DATA_OUTPUT'] + '\\' + i
             os.remove(file)
         print('初始化成功')
 
@@ -292,36 +297,36 @@ class TrainDataHandle:
     def input_selected_data_to_selected_table(self):
         # 读取指定文件夹，取得数据名字
         file_name_sets = []
-        selected_file_input_path = conf.OUTPUT_DATA_PATH
+        selected_file_input_path = conf.PATH['DATA_OUTPUT']
         for i in os.walk(selected_file_input_path):
             file_name_sets = i[2]
 
         # 查询数据名字是否在主数据表中，若不在，则将其标记并打印提示用户，若在，则将其id存储，并进行下一步
-        data_information_fields = self.get_fields(conf.DATA_INFORMATION_TABLE_NAME)
-        select_data_fields = self.get_fields(conf.DATA_SELECT_TABLE_NAME)
+        data_information_fields = self.get_fields(conf.TABLE['DATA_INFORMATION'])
+        select_data_fields = self.get_fields(conf.TABLE['DATA_SELECT'])
 
         file_id_sets = []
         for i in file_name_sets:
-            sql = "SELECT id FROM " + conf.DATA_INFORMATION_TABLE_NAME + " WHERE " + data_information_fields[0] + " = '%s'" % i
+            sql = "SELECT id FROM " + conf.TABLE['DATA_INFORMATION'] + " WHERE " + data_information_fields[0] + " = '%s'" % i
             self.cursor.execute(sql)
-            result = self.cursor.fetchone()
+            search_result = self.cursor.fetchone()
 
-            if result == None:
+            if search_result is None:
                 print("数据:" + str(i) + "不在数据集中")
             else:
-                file_id_sets.append(result[0])
+                file_id_sets.append(search_result[0])
 
         # 查询数据id是否在选中表中，若在，则忽略，若不在，则加入用于插入的列表，则进行下一步
         file_id_need_input = []
-        for l in file_id_sets:
-            sql = "SELECT id FROM " + conf.DATA_SELECT_TABLE_NAME + " WHERE " + select_data_fields[
-                0] + " = '%s'" % l
+        for i in file_id_sets:
+            sql = "SELECT id FROM " + conf.TABLE['DATA_SELECT'] + " WHERE " + select_data_fields[
+                0] + " = '%s'" % i
 
             self.cursor.execute(sql)
-            result = self.cursor.fetchone()
+            search_result = self.cursor.fetchone()
 
-            if result is None:
-                file_id_need_input.append(l)
+            if search_result is None:
+                file_id_need_input.append(i)
 
         # 根据用于插入的列表中存储的主表id，将其作为选中表的外键id插入选中表
         if file_id_need_input:
@@ -341,15 +346,15 @@ if __name__ == '__main__':
     # 测试区域
     f = TrainDataHandle()
 
-    # result = f.get_fields(table_name=conf.DATA_SELECT_TABLE_NAME)
-    # result = f.search_data_key(field='finding_labels', key_word='Mass', nums=50, if_like=1)
+    # result = f.get_fields(table_name=conf.TABLE['DATA_SELECT'])
+    result = f.search_data_key(field='finding_labels', key_word='Mass', nums=50, if_like=1)
     # f.out_put_data(data_sets=result)
     # f.initialization()
     # f.input_selected_data_to_selected_table()
 
     # f.initialization()
 
-    # print(result)
+    print(result)
 
     end_time = int(time.time())
     use_time = end_time - start_time

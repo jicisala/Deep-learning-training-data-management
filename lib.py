@@ -7,6 +7,7 @@
 # @Software: PyCharm
 import time
 
+
 def get_string_similarity(string_1, string_2, if_big=0, if_sym=0):
     # 将字符串变为小写
     if if_big == 0:
@@ -30,7 +31,6 @@ def get_string_similarity(string_1, string_2, if_big=0, if_sym=0):
         string_no_sym_1 = string_1
         string_no_sym_2 = string_2
 
-
     # 计算长度
     string_len_1 = len(string_no_sym_1)
     string_len_2 = len(string_no_sym_2)
@@ -45,7 +45,7 @@ def get_string_similarity(string_1, string_2, if_big=0, if_sym=0):
     # 进行比较
     for i in range(len(string_no_sym_1)):
         if string_no_sym_1[:i] in string_no_sym_2:
-            string_com = string_no_sym_1[:i+1]
+            string_com = string_no_sym_1[:i + 1]
 
     # 计算相似度
     string_com_len = len(string_com)
@@ -56,6 +56,16 @@ def get_string_similarity(string_1, string_2, if_big=0, if_sym=0):
     else:
         return False
 
+# 计算花费时间的装饰器
+def time_consuming(function):
+    def get_time_consuming():
+        start = time.time()
+        function()
+        ending = str(int((time.time() - start) * 1000))
+        print("共计花费：" + ending + "ms")
+    return get_time_consuming
+
+
 if __name__ == '__main__':
     string_1 = "image_index"
     string_2 = "Image Index"
@@ -63,5 +73,4 @@ if __name__ == '__main__':
     result = 0
     if not result:
         print("yes")
-
 
