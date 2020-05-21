@@ -10,6 +10,7 @@ import conf
 import time
 import os
 import shutil
+from core.data_parse import DataParse
 
 
 class TrainDataHandle:
@@ -76,37 +77,12 @@ class TrainDataHandle:
 
         return sql
 
-    # 获得信息表中信息（scv，excel等）
-    # 如果type为1，则获得的是信息，type为0，则获得的是头部
-    @staticmethod
-    def open_data_information_file(file=conf.PATH['DATA_INFORMATION'], sql_type=1):
-        if file is None:
-            print("文件路径为空")
-
-        # 对文件类型进行判断
-        suffix = file.split('.')[-1]
-
-        if suffix == "csv":
-            import csv
-            with open(file, 'r') as contents:
-                reader = csv.reader(contents)
-                if sql_type == 1:
-                    # 去掉第一行属性名行
-                    reader = list(reader)[1:]
-                elif sql_type == 0:
-                    reader = list(reader)[0]
-        if suffix == "excel":
-            print("开发中")
-            return False
-
-        return reader
-
     # 输入需要解析的记录文件，如excel，csv等格式
     # file为记录文件的绝对路径加文件名
     def input_data(self, table_name=conf.TABLE['DATA_INFORMATION'], contents=''):
         # 若没内容，则传入训练数据
         if contents == '':
-            contents = self.open_data_information_file()
+            contents = DataParse().parse_csv(output_type=1)
         # 获得需要写入的字段
         fields = self.get_fields(table_name)
 
